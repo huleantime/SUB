@@ -647,6 +647,11 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 								color: var(--muted);
 								font-size: 13px;
 							}
+							.guest-token {
+								display: block;
+								margin-top: 4px;
+								overflow-wrap: anywhere;
+							}
 							.link-list {
 								display: grid;
 								gap: 10px;
@@ -896,7 +901,7 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 										<div class="panel-head">
 											<div>
 												<h2 class="panel-title">访客订阅</h2>
-												<p class="panel-subtitle">只能使用订阅功能，不能进入配置页。Token: ${guest}</p>
+												<p class="panel-subtitle">只能使用订阅功能，不能进入配置页。<span class="guest-token">Token: ${guest}</span></p>
 											</div>
 											<button class="toggle-btn" id="noticeToggle" onclick="toggleNotice()">查看</button>
 										</div>

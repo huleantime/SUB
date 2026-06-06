@@ -56,7 +56,7 @@ export default {
 		SUBUpdateTime = env.SUBUPTIME || SUBUpdateTime;
 
 		if (!([mytoken, fakeToken, 访客订阅].includes(token) || url.pathname == ("/" + mytoken) || url.pathname.includes("/" + mytoken + "?"))) {
-			if (TG == 1 && url.pathname !== "/" && url.pathname !== "/favicon.ico") await sendMessage(`#异常访问 ${FileName}`, request.headers.get('CF-Connecting-IP'), `UA: ${userAgent}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
+			if (TG == 1 && url.pathname !== "/" && url.pathname !== "/favicon.ico") await sendMessage(`#异常访问 ${FileName}`, request.headers.get('CF-Connecting-IP'), `域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 			if (env.URL302) return Response.redirect(env.URL302, 302);
 			else if (env.URL) return await proxyURL(env.URL, url);
 			else return new Response(await nginx(), {
@@ -69,7 +69,7 @@ export default {
 			if (env.KV) {
 				await 迁移地址列表(env, 'LINK.txt');
 				if (userAgent.includes('mozilla') && !url.search) {
-					await sendMessage(`#编辑订阅 ${FileName}`, request.headers.get('CF-Connecting-IP'), `UA: ${userAgentHeader}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
+					await sendMessage(`#编辑订阅 ${FileName}`, request.headers.get('CF-Connecting-IP'), `域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 					return await KV(request, env, 'LINK.txt', 访客订阅);
 				} else {
 					MainData = await env.KV.get('LINK.txt') || MainData;
@@ -90,7 +90,7 @@ export default {
 			}
 			MainData = 自建节点;
 			urls = await ADD(订阅链接);
-			await sendMessage(`#获取订阅 ${FileName}`, request.headers.get('CF-Connecting-IP'), `UA: ${userAgentHeader}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
+			await sendMessage(`#获取订阅 ${FileName}`, request.headers.get('CF-Connecting-IP'), `域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 			const isSubConverterRequest = request.headers.get('subconverter-request') || request.headers.get('subconverter-version') || userAgent.includes('subconverter');
 			let 订阅格式 = 'base64';
 			if (!(userAgent.includes('null') || isSubConverterRequest || userAgent.includes('nekobox') || userAgent.includes(('CF-Workers-SUB').toLowerCase()))) {
@@ -803,12 +803,6 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 								opacity: 1;
 								transform: translateX(-50%) translateY(0);
 							}
-							.ua {
-								margin: 16px 0 0;
-								color: var(--muted);
-								font-size: 12px;
-								overflow-wrap: anywhere;
-							}
 							.kv-missing {
 								margin: 0;
 								padding: 16px;
@@ -824,6 +818,9 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 								.topbar, .grid {
 									display: grid;
 									grid-template-columns: 1fr;
+								}
+								.editor-panel {
+									order: -1;
 								}
 								.link-row {
 									grid-template-columns: 1fr;
@@ -961,7 +958,7 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 										</div>
 									</div>
 								</section>
-								<section class="glass panel">
+								<section class="glass panel editor-panel">
 									<div class="panel-head">
 										<div>
 											<h2 class="panel-title">汇聚订阅编辑</h2>
@@ -979,7 +976,6 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 										</div>
 										` : '<p class="kv-missing">请绑定变量名称为 <strong>KV</strong> 的 KV 命名空间</p>'}
 									</div>
-									<p class="ua">UA: <strong>${request.headers.get('User-Agent')}</strong></p>
 								</section>
 							</main>
 						</div>

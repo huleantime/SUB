@@ -27,7 +27,8 @@ export default {
 		const userAgent = userAgentHeader ? userAgentHeader.toLowerCase() : "null";
 		const url = new URL(request.url);
 		const token = url.searchParams.get('token');
-		const guestPath = url.pathname.toLowerCase() === '/guest';
+		const normalizedPath = (url.pathname.replace(/\/+$/, '') || '/').toLowerCase();
+		const guestPath = normalizedPath === '/guest';
 		mytoken = env.TOKEN || mytoken;
 		BotToken = env.TGTOKEN || BotToken;
 		ChatID = env.TGID || ChatID;
@@ -49,7 +50,7 @@ export default {
 		guestToken = env.GUESTTOKEN || env.GUEST || guestToken;
 		if (!guestToken) guestToken = await MD5MD5(mytoken);
 		const 访客订阅 = guestToken;
-		const guestOnlyPage = guestPath && userAgent.includes('mozilla') && !url.search;
+		const guestOnlyPage = guestPath && !url.search;
 		//console.log(`${fakeUserID}\n${fakeHostName}`); // 打印fakeID
 
 		let UD = Math.floor(((timestamp - Date.now()) / timestamp * total * 1099511627776) / 2);
@@ -57,7 +58,7 @@ export default {
 		let expire = Math.floor(timestamp / 1000);
 		SUBUpdateTime = env.SUBUPTIME || SUBUpdateTime;
 
-		const allowedPath = [mytoken, fakeToken, 访客订阅].includes(token) || url.pathname === "/" + mytoken || url.pathname === "/" + 访客订阅 || guestPath;
+		const allowedPath = [mytoken, fakeToken, 访客订阅].includes(token) || normalizedPath === "/" + mytoken || normalizedPath === "/" + 访客订阅 || guestPath;
 		if (!allowedPath) {
 			if (TG == 1 && url.pathname !== "/" && url.pathname !== "/favicon.ico") await sendMessage(`#异常访问 ${FileName}`, request.headers.get('CF-Connecting-IP'), `域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 			if (env.URL302) return Response.redirect(env.URL302, 302);

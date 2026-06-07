@@ -28,7 +28,6 @@ export default {
 		const url = new URL(request.url);
 		const token = url.searchParams.get('token');
 		const normalizedPath = (url.pathname.replace(/\/+$/, '') || '/').toLowerCase();
-		const guestPath = normalizedPath === '/guest';
 		mytoken = env.TOKEN || mytoken;
 		BotToken = env.TGTOKEN || BotToken;
 		ChatID = env.TGID || ChatID;
@@ -50,6 +49,7 @@ export default {
 		guestToken = env.GUESTTOKEN || env.GUEST || guestToken;
 		if (!guestToken) guestToken = await MD5MD5(mytoken);
 		const 访客订阅 = guestToken;
+		const guestPath = normalizedPath === ('/' + (String(访客订阅 || '').toLowerCase()));
 		const guestOnlyPage = guestPath && !url.search;
 		//console.log(`${fakeUserID}\n${fakeHostName}`); // 打印fakeID
 

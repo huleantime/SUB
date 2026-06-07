@@ -86,15 +86,19 @@ export default {
 						const cookieHeader = request.headers.get('Cookie') || '';
 						const hasSession = cookieHeader.includes('cf_sub_admin=1');
 
-						if (request.method === 'POST') {
+						if (request.method === 'POST' && !hasSession) {
 							const formData = await request.formData();
 							const inputUser = formData.get('admin_user') || '';
 							const inputPass = formData.get('admin_pass') || '';
 
 							if (inputUser === adminUser && inputPass === adminPass) {
-								const response = await KV(request, env, 'LINK.txt', 访客订阅);
-								response.headers.set('Set-Cookie', 'cf_sub_admin=1; Path=/; HttpOnly; SameSite=Strict');
-								return response;
+								return new Response(null, {
+									status: 302,
+									headers: {
+										'Location': url.pathname,
+										'Set-Cookie': 'cf_sub_admin=1; Path=/; HttpOnly; SameSite=Strict'
+									}
+								});
 							}
 
 							return new Response(renderLoginPage(url, true), {

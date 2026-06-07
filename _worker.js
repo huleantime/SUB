@@ -291,6 +291,8 @@ async function sendMessage(type, ip, add_data = "") {
 }
 
 function renderGuestPage(url, guest, subProtocol, subConverter, subConfig) {
+	const guestEsc = encodeURIComponent(String(guest || 'guest'));
+	const guestBase = `https://${url.hostname}/${guestEsc}`;
 	return `<!DOCTYPE html>
 	<html>
 	<head>
@@ -320,9 +322,7 @@ function renderGuestPage(url, guest, subProtocol, subConverter, subConfig) {
 			<div class="header">
 				<div>
 					<h1>${FileName} 访客订阅</h1>
-					<p>访问 /GUEST 直接进入访客订阅模式。</p>
 				</div>
-				<div class="status-pill"><span class="dot"></span> Visitor mode</div>
 			</div>
 			<div class="glass">
 				<h2>访客订阅链接</h2>
@@ -330,38 +330,38 @@ function renderGuestPage(url, guest, subProtocol, subConverter, subConfig) {
 				<div class="link-list">
 					<div class="link-row">
 						<span class="link-name">自适应</span>
-						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST','guest_0')">https://${url.hostname}/GUEST</a>
-						<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST','guest_0')">复制</button>
+						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('${guestBase}','guest_0')">${guestBase}</a>
+						<button class="action-btn" onclick="copyToClipboard('${guestBase}','guest_0')">复制</button>
 					</div>
 					<div id="guest_0" class="qrcode"></div>
 					<div class="link-row">
 						<span class="link-name">Base64</span>
-						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST?b64','guest_1')">https://${url.hostname}/GUEST?b64</a>
-						<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST?b64','guest_1')">复制</button>
+						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('${guestBase}?b64','guest_1')">${guestBase}?b64</a>
+						<button class="action-btn" onclick="copyToClipboard('${guestBase}?b64','guest_1')">复制</button>
 					</div>
 					<div id="guest_1" class="qrcode"></div>
 					<div class="link-row">
 						<span class="link-name">Clash</span>
-						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST?clash','guest_2')">https://${url.hostname}/GUEST?clash</a>
-						<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST?clash','guest_2')">复制</button>
+						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('${guestBase}?clash','guest_2')">${guestBase}?clash</a>
+						<button class="action-btn" onclick="copyToClipboard('${guestBase}?clash','guest_2')">复制</button>
 					</div>
 					<div id="guest_2" class="qrcode"></div>
 					<div class="link-row">
 						<span class="link-name">Sing-box</span>
-						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST?sb','guest_3')">https://${url.hostname}/GUEST?sb</a>
-						<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST?sb','guest_3')">复制</button>
+						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('${guestBase}?sb','guest_3')">${guestBase}?sb</a>
+						<button class="action-btn" onclick="copyToClipboard('${guestBase}?sb','guest_3')">复制</button>
 					</div>
 					<div id="guest_3" class="qrcode"></div>
 					<div class="link-row">
 						<span class="link-name">Surge</span>
-						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST?surge','guest_4')">https://${url.hostname}/GUEST?surge</a>
-						<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST?surge','guest_4')">复制</button>
+						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('${guestBase}?surge','guest_4')">${guestBase}?surge</a>
+						<button class="action-btn" onclick="copyToClipboard('${guestBase}?surge','guest_4')">复制</button>
 					</div>
 					<div id="guest_4" class="qrcode"></div>
 					<div class="link-row">
 						<span class="link-name">Loon</span>
-						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST?loon','guest_5')">https://${url.hostname}/GUEST?loon</a>
-						<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST?loon','guest_5')">复制</button>
+						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('${guestBase}?loon','guest_5')">${guestBase}?loon</a>
+						<button class="action-btn" onclick="copyToClipboard('${guestBase}?loon','guest_5')">复制</button>
 					</div>
 					<div id="guest_5" class="qrcode"></div>
 				</div>

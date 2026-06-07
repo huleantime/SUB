@@ -77,21 +77,38 @@ export default {
 			}
 			if (env.KV) {
 				await 迁移地址列表(env, 'LINK.txt');
-				if (userAgent.includes('mozilla') && !url.search && !guestPath) {
+				if (userAgent.includes('mozilla') && !guestPath) {
 					// 身份验证检查
 					const adminUser = env.ADMIN_USER || '';
 					const adminPass = env.ADMIN_PASS || '';
-					const inputUser = url.searchParams.get('admin_user') || '';
-					const inputPass = url.searchParams.get('admin_pass') || '';
-					
+
 					if (adminUser && adminPass) {
-						if (inputUser !== adminUser || inputPass !== adminPass) {
-							return new Response(renderLoginPage(url), {
+						const cookieHeader = request.headers.get('Cookie') || '';
+						const hasSession = cookieHeader.includes('cf_sub_admin=1');
+
+						if (request.method === 'POST') {
+							const formData = await request.formData();
+							const inputUser = formData.get('admin_user') || '';
+							const inputPass = formData.get('admin_pass') || '';
+
+							if (inputUser === adminUser && inputPass === adminPass) {
+								const response = await KV(request, env, 'LINK.txt', 访客订阅);
+								response.headers.set('Set-Cookie', 'cf_sub_admin=1; Path=/; HttpOnly; SameSite=Strict');
+								return response;
+							}
+
+							return new Response(renderLoginPage(url, true), {
+								headers: { 'Content-Type': 'text/html;charset=utf-8' }
+							});
+						}
+
+						if (!hasSession) {
+							return new Response(renderLoginPage(url, false), {
 								headers: { 'Content-Type': 'text/html;charset=utf-8' }
 							});
 						}
 					}
-					
+
 					await sendMessage(`#编辑订阅 ${FileName}`, request.headers.get('CF-Connecting-IP'), `域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 					return await KV(request, env, 'LINK.txt', 访客订阅);
 				} else {
@@ -304,7 +321,7 @@ async function sendMessage(type, ip, add_data = "") {
 	}
 }
 
-function renderLoginPage(url) {
+function renderLoginPage(url, showError = false) {
 	return `<!DOCTYPE html>
 <html>
 <head>
@@ -330,7 +347,8 @@ function renderLoginPage(url) {
 	<div class="login-container">
 		<div class="login-card">
 			<h1>管理员登录</h1>
-			<form method="GET">
+			${showError ? '<div style="margin-bottom:16px;padding:10px;border-radius:8px;background:#ffe5e5;color:#c00;text-align:center;">用户名或密码错误</div>' : ''}
+			<form method="POST" action="">
 				<div class="form-group">
 					<label for="user">用户名</label>
 					<input type="text" id="user" name="admin_user" required autofocus>
@@ -339,6 +357,7 @@ function renderLoginPage(url) {
 					<label for="pass">密码</label>
 					<input type="password" id="pass" name="admin_pass" required>
 				</div>
+				<input type="hidden" name="admin_login" value="1">
 				<button type="submit">登录</button>
 			</form>
 		</div>

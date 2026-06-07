@@ -6,9 +6,9 @@
 
 ## 项目简介
 
-CF-SUB-LEAN 是基于 CF-Workers-SUB 的个人维护版本。
+CF-SUB-LEAN 是基于 CF-Workers-SUB 修改的版本，主要针对前端界面样式进行了重新设计，并增加了部分实用功能与体验优化。
 
-与原版相比，本项目主要专注于：
+与原版相比，本项目主要改动包括：
 
 - Apple 风格液态玻璃 UI
 - 手机端优先的管理体验
@@ -93,52 +93,143 @@ ADMIN_PASS
 
 ## 环境变量
 
-### 基础配置
+以下内容基于当前项目实际支持的环境变量整理。
 
-| 变量名 | 是否必填 | 示例 | 说明 |
+| 变量名 | 示例 | 必填 | 备注 |
 | --- | --- | --- | --- |
-| TOKEN | ✅ | auto | 主订阅 Token |
-| LINK | ❌ | vmess://... | 节点内容或订阅内容 |
-| LINKSUB | ❌ | https://sub.example.com/sub | 额外订阅链接 |
-| SUBNAME | ❌ | CF-SUB-LEAN | 页面标题与订阅名称 |
-| GUESTTOKEN / GUEST | ❌ | guest | 访客订阅 Token |
+| TOKEN | `auto` | ✅ | 汇聚订阅的订阅配置路径地址，例如：`/auto` |
+| GUEST | `test` | ❌ | 汇聚订阅的访客订阅 TOKEN |
+| LINK | `vless://...` | ❌ | 节点链接与订阅链接内容（绑定 KV 后优先使用 KV） |
+| TGTOKEN | `6894123456:XXXXXXXXXX` | ❌ | Telegram 通知机器人 Token |
+| TGID | `6946912345` | ❌ | Telegram 接收通知账户 ID |
+| SUBNAME | `CF-SUB-LEAN` | ❌ | 订阅名称 |
+| SUBAPI | `SUBAPI.example.com` | ❌ | Clash、Sing-box 等订阅转换后端 |
+| SUBCONFIG | `https://example.com/config.ini` | ❌ | Clash、Sing-box 等订阅转换配置文件 |
+| ADMIN_USER | `admin` | ❌ | 管理后台用户名（本项目新增） |
+| ADMIN_PASS | `123456` | ❌ | 管理后台密码（本项目新增） |
 
-### 后台登录
+### ADMIN_USER 与 ADMIN_PASS
 
-| 变量名 | 是否必填 | 示例 | 说明 |
-| --- | --- | --- | --- |
-| ADMIN_USER | ❌ | admin | 管理后台用户名 |
-| ADMIN_PASS | ❌ | 123456 | 管理后台密码 |
+本项目新增后台登录验证功能。
 
-说明：
+当同时设置：
 
-- 两个变量必须同时设置才会启用登录验证。
-- 未设置时可直接访问后台。
-- 设置后访问 TOKEN 页面会先进入登录界面。
+```text
+ADMIN_USER=admin
+ADMIN_PASS=123456
+```
 
-### 订阅转换
+访问：
 
-| 变量名 | 是否必填 | 示例 | 说明 |
-| --- | --- | --- | --- |
-| SUBAPI | ❌ | api.v1.mk | 订阅转换后端 |
-| SUBCONFIG | ❌ | URL | 订阅转换配置 |
-| SUBUPTIME | ❌ | 6 | 更新时间（小时） |
+```text
+https://你的域名/TOKEN
+```
 
-### Telegram 通知
+将先进入登录页面，验证成功后进入订阅管理后台。
 
-| 变量名 | 是否必填 | 示例 | 说明 |
-| --- | --- | --- | --- |
-| TGTOKEN | ❌ | 123456:ABC | Telegram Bot Token |
-| TGID | ❌ | 123456789 | Telegram 用户 ID |
-| TG | ❌ | 1 | 开启详细访问通知 |
+未设置这两个变量时，将直接进入后台。
 
-### 其他配置
+## 快速搭建教程
 
-| 变量名 | 是否必填 | 示例 | 说明 |
-| --- | --- | --- | --- |
-| URL302 | ❌ | https://google.com | 非法访问跳转地址 |
-| URL | ❌ | https://example.com | 非法访问反代目标 |
-| WARP | ❌ | vmess://... | 追加 WARP 节点 |
+### 第一步：创建 Worker
+
+1. 登录 Cloudflare Dashboard
+2. 进入 Workers & Pages
+3. 创建 Worker
+4. 删除默认代码
+5. 粘贴 `_worker.js`
+6. 点击 Deploy
+
+### 第二步：配置环境变量
+
+进入：
+
+```text
+Settings → Variables and Secrets
+```
+
+最小配置示例：
+
+```text
+TOKEN=auto
+```
+
+开启后台登录示例：
+
+```text
+TOKEN=auto
+ADMIN_USER=admin
+ADMIN_PASS=123456
+```
+
+开启访客订阅示例：
+
+```text
+TOKEN=auto
+GUEST=test
+```
+
+### 第三步：绑定 KV（推荐）
+
+创建 KV Namespace 并绑定到 Worker。
+
+绑定名称必须为：
+
+```text
+KV
+```
+
+绑定后可直接在网页后台编辑订阅内容。
+
+### 第四步：访问
+
+主订阅：
+
+```text
+https://你的域名/auto
+```
+
+访客订阅：
+
+```text
+https://你的域名/test
+```
+
+管理后台：
+
+```text
+https://你的域名/auto
+```
+
+如果配置了 ADMIN_USER 和 ADMIN_PASS，将先显示登录页面。
+
+## 常见使用场景
+
+### 仅个人使用
+
+```text
+TOKEN=auto
+SUBNAME=我的订阅
+```
+
+### 开启访客订阅
+
+```text
+TOKEN=auto
+GUEST=test
+```
+
+### 开启后台登录
+
+```text
+TOKEN=auto
+ADMIN_USER=admin
+ADMIN_PASS=123456
+```
+
+### 使用 KV 在线编辑
+
+绑定 KV 后访问 TOKEN 地址即可进入管理后台。
 
 ## 快速搭建教程
 
@@ -303,7 +394,7 @@ wrangler deploy
 - 默认隐藏部分无关展示内容
 - 增加访客订阅页面
 - 增加后台登录验证
-- 增加 Cookie 登录保持
+- 增加后台登录验证功能
 - 优化订阅管理体验
 
 ## 免责声明

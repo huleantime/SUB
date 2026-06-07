@@ -93,24 +93,183 @@ ADMIN_PASS
 
 ## 环境变量
 
-| 变量名 | 说明 |
-| --- | --- |
-| TOKEN | 主订阅 Token |
-| GUESTTOKEN / GUEST | 访客订阅 Token |
-| ADMIN_USER | 管理后台用户名 |
-| ADMIN_PASS | 管理后台密码 |
-| LINK | 节点或订阅内容 |
-| LINKSUB | 额外订阅链接 |
-| SUBNAME | 页面标题 |
-| SUBAPI | 订阅转换后端 |
-| SUBCONFIG | 订阅转换配置 |
-| SUBUPTIME | 订阅更新时间 |
-| TGTOKEN | Telegram Bot Token |
-| TGID | Telegram 用户 ID |
-| TG | 访问通知开关 |
-| URL302 | 非法访问跳转地址 |
-| URL | 非法访问反代目标 |
-| WARP | 追加 WARP 节点 |
+### 基础配置
+
+| 变量名 | 是否必填 | 示例 | 说明 |
+| --- | --- | --- | --- |
+| TOKEN | ✅ | auto | 主订阅 Token |
+| LINK | ❌ | vmess://... | 节点内容或订阅内容 |
+| LINKSUB | ❌ | https://sub.example.com/sub | 额外订阅链接 |
+| SUBNAME | ❌ | CF-SUB-LEAN | 页面标题与订阅名称 |
+| GUESTTOKEN / GUEST | ❌ | guest | 访客订阅 Token |
+
+### 后台登录
+
+| 变量名 | 是否必填 | 示例 | 说明 |
+| --- | --- | --- | --- |
+| ADMIN_USER | ❌ | admin | 管理后台用户名 |
+| ADMIN_PASS | ❌ | 123456 | 管理后台密码 |
+
+说明：
+
+- 两个变量必须同时设置才会启用登录验证。
+- 未设置时可直接访问后台。
+- 设置后访问 TOKEN 页面会先进入登录界面。
+
+### 订阅转换
+
+| 变量名 | 是否必填 | 示例 | 说明 |
+| --- | --- | --- | --- |
+| SUBAPI | ❌ | api.v1.mk | 订阅转换后端 |
+| SUBCONFIG | ❌ | URL | 订阅转换配置 |
+| SUBUPTIME | ❌ | 6 | 更新时间（小时） |
+
+### Telegram 通知
+
+| 变量名 | 是否必填 | 示例 | 说明 |
+| --- | --- | --- | --- |
+| TGTOKEN | ❌ | 123456:ABC | Telegram Bot Token |
+| TGID | ❌ | 123456789 | Telegram 用户 ID |
+| TG | ❌ | 1 | 开启详细访问通知 |
+
+### 其他配置
+
+| 变量名 | 是否必填 | 示例 | 说明 |
+| --- | --- | --- | --- |
+| URL302 | ❌ | https://google.com | 非法访问跳转地址 |
+| URL | ❌ | https://example.com | 非法访问反代目标 |
+| WARP | ❌ | vmess://... | 追加 WARP 节点 |
+
+## 快速搭建教程
+
+### 方式一：Cloudflare Dashboard（推荐）
+
+#### 第一步：创建 Worker
+
+1. 登录 Cloudflare Dashboard
+2. 打开 Workers & Pages
+3. 创建 Worker
+4. 删除默认代码
+5. 粘贴 `_worker.js`
+6. 点击 Deploy
+
+#### 第二步：配置环境变量
+
+进入：
+
+```text
+Settings → Variables and Secrets
+```
+
+最小配置示例：
+
+```text
+TOKEN=auto
+SUBNAME=CF-SUB-LEAN
+```
+
+启用后台登录示例：
+
+```text
+TOKEN=auto
+ADMIN_USER=admin
+ADMIN_PASS=123456
+```
+
+启用访客订阅示例：
+
+```text
+TOKEN=auto
+GUESTTOKEN=guest
+```
+
+#### 第三步：绑定 KV
+
+创建 KV Namespace。
+
+例如：
+
+```text
+CF-SUB-LEAN
+```
+
+然后绑定到 Worker：
+
+```text
+KV
+```
+
+注意名称必须是：
+
+```text
+KV
+```
+
+#### 第四步：访问后台
+
+例如：
+
+```text
+TOKEN=auto
+```
+
+后台地址：
+
+```text
+https://你的域名/auto
+```
+
+如果启用了 ADMIN_USER 与 ADMIN_PASS：
+
+```text
+https://你的域名/auto
+↓
+登录页面
+↓
+订阅管理后台
+```
+
+### 方式二：Wrangler 部署
+
+```bash
+npm install -g wrangler
+wrangler login
+wrangler deploy
+```
+
+首次部署后再到 Cloudflare Dashboard 配置环境变量与 KV。
+
+## 常见使用场景
+
+### 个人使用
+
+```text
+TOKEN=auto
+SUBNAME=我的订阅
+```
+
+### 开启访客订阅
+
+```text
+TOKEN=auto
+GUESTTOKEN=guest
+```
+
+访客访问：
+
+```text
+https://域名/guest
+```
+
+### 开启后台密码
+
+```text
+TOKEN=auto
+ADMIN_USER=admin
+ADMIN_PASS=123456
+```
+
+访问后台时需要先登录。
 
 ## KV 配置
 

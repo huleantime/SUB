@@ -60,6 +60,8 @@ https://你的域名/你的GUEST值
 | --- | --- | --- |
 | `TOKEN` | 推荐 | 主订阅入口 Token，默认是 `auto` |
 | `GUESTTOKEN` 或 `GUEST` | 可选 | 访客订阅 Token（用于访客模式的路径和链接） |
+| `ADMIN_USER` | 可选 | 管理页面用户名（需同时设置 ADMIN_PASS） |
+| `ADMIN_PASS` | 可选 | 管理页面密码（需同时设置 ADMIN_USER） |
 | `LINK` | 可选 | 未绑定 KV 时使用的节点或订阅内容 |
 | `LINKSUB` | 可选 | 额外订阅链接 |
 | `SUBNAME` | 可选 | 页面标题和订阅名称 |

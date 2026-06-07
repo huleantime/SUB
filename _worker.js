@@ -78,6 +78,20 @@ export default {
 			if (env.KV) {
 				await 迁移地址列表(env, 'LINK.txt');
 				if (userAgent.includes('mozilla') && !url.search && !guestPath) {
+					// 身份验证检查
+					const adminUser = env.ADMIN_USER || '';
+					const adminPass = env.ADMIN_PASS || '';
+					const inputUser = url.searchParams.get('admin_user') || '';
+					const inputPass = url.searchParams.get('admin_pass') || '';
+					
+					if (adminUser && adminPass) {
+						if (inputUser !== adminUser || inputPass !== adminPass) {
+							return new Response(renderLoginPage(url), {
+								headers: { 'Content-Type': 'text/html;charset=utf-8' }
+							});
+						}
+					}
+					
 					await sendMessage(`#编辑订阅 ${FileName}`, request.headers.get('CF-Connecting-IP'), `域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 					return await KV(request, env, 'LINK.txt', 访客订阅);
 				} else {
@@ -288,6 +302,49 @@ async function sendMessage(type, ip, add_data = "") {
 			}
 		});
 	}
+}
+
+function renderLoginPage(url) {
+	return `<!DOCTYPE html>
+<html>
+<head>
+	<title>管理员登录 - ${FileName}</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<style>
+		:root { color-scheme: light; --text: #172033; --accent: #147efb; --shadow: 0 24px 70px rgba(51, 71, 110, 0.22); }
+		* { box-sizing: border-box; }
+		body { margin: 0; padding: 24px; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif; background: linear-gradient(135deg, #f5fbff 0%, #eef4f9 48%, #f7f2ed 100%); display: flex; align-items: center; justify-content: center; }
+		.login-container { max-width: 360px; width: 100%; }
+		.login-card { background: rgba(255, 255, 255, 0.70); backdrop-filter: blur(28px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.56); border-radius: 22px; padding: 40px 24px; box-shadow: var(--shadow); }
+		h1 { margin: 0 0 24px; font-size: 24px; color: var(--text); text-align: center; }
+		.form-group { margin-bottom: 16px; }
+		label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+		input { width: 100%; padding: 10px 12px; border: 1px solid rgba(255, 255, 255, 0.72); border-radius: 8px; background: rgba(255, 255, 255, 0.58); font-size: 14px; color: var(--text); font-family: inherit; }
+		input:focus { outline: none; background: rgba(255, 255, 255, 0.82); border-color: var(--accent); }
+		button { width: 100%; padding: 10px 12px; border: none; border-radius: 8px; background: var(--accent); color: white; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 24px; }
+		button:hover { opacity: 0.9; }
+	</style>
+</head>
+<body>
+	<div class="login-container">
+		<div class="login-card">
+			<h1>管理员登录</h1>
+			<form method="GET">
+				<div class="form-group">
+					<label for="user">用户名</label>
+					<input type="text" id="user" name="admin_user" required autofocus>
+				</div>
+				<div class="form-group">
+					<label for="pass">密码</label>
+					<input type="password" id="pass" name="admin_pass" required>
+				</div>
+				<button type="submit">登录</button>
+			</form>
+		</div>
+	</div>
+</body>
+</html>`;
 }
 
 function renderGuestPage(url, guest, subProtocol, subConverter, subConfig) {

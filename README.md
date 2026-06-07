@@ -1,104 +1,162 @@
-
 # CF-SUB-LEAN
 
-这是基于 CF-Workers-SUB 项目修改的 Cloudflare Worker 汇聚订阅工具。项目名称为 CF-SUB-LEAN，专注于提供简洁的订阅聚合、在线管理和移动端友好的操作体验。我主要调整了前端页面样式与交互逻辑，移除了索引链接等非必要内容，并优化了手机端管理体验。页面采用 Apple 液态玻璃风格，手机端优先显示“汇聚订阅编辑”，方便直接维护订阅内容。
+> 基于 CF-Workers-SUB 修改的 Cloudflare Workers 订阅聚合工具。
+>
+> 保留原项目核心订阅处理能力，在此基础上进行了界面重构、移动端优化、访客订阅页面、后台登录验证等增强，更适合作为个人订阅管理面板使用。
+
+## 项目简介
+
+CF-SUB-LEAN 是基于 CF-Workers-SUB 的个人维护版本。
+
+与原版相比，本项目主要专注于：
+
+- Apple 风格液态玻璃 UI
+- 手机端优先的管理体验
+- 简洁的订阅展示页面
+- 访客订阅模式
+- Cloudflare KV 在线编辑
+- ADMIN_USER / ADMIN_PASS 后台登录验证
+- Cookie 登录保持
+- 移除部分非必要展示内容
+
 ## 项目来源
 
-本项目基于 CF-Workers-SUB 进行修改：
+本项目基于以下开源项目进行修改：
 
 - 原项目：https://github.com/cmliu/CF-Workers-SUB
-- 保留原项目核心订阅处理逻辑。
-- 主要改动为前端界面优化、移动端布局调整、移除索引链接以及部分交互体验改进。
+
+保留原项目核心订阅处理逻辑与订阅转换能力。
 
 感谢原作者的开源贡献。
 
-## 功能
+## 功能特性
 
-- 支持把自建节点和订阅链接汇聚成一个订阅入口。
-- 支持 Base64、Clash、Sing-box、Surge、Loon 等订阅格式。
-- 支持 Cloudflare KV 在线编辑订阅内容。
-- 支持 ADMIN_USER / ADMIN_PASS 后台登录验证，并通过 Cookie 保持登录状态。
-- 支持访客订阅模式（通过 `GUEST` 或 `GUESTTOKEN` 环境变量）。
-- 支持复制订阅地址并生成二维码。
-- 支持可选 Telegram 通知，但不会在页面展示访问设备 UA。
-
-## 项目文件
-
-- `_worker.js`: Worker 主程序，也是前端页面所在文件。
-- `wrangler.toml`: Wrangler 部署配置。
-- `LICENSE`: 开源许可证。
+- 聚合多个订阅链接和节点内容
+- 支持 Base64、Clash、Sing-box、Surge、Loon 等格式
+- 支持订阅转换后端
+- 支持 Cloudflare KV 在线编辑
+- 支持访客订阅页面
+- 支持二维码生成与复制订阅链接
+- 支持 Telegram 访问通知
+- 支持后台登录验证
+- 支持移动端优化界面
+- 支持自定义页面标题与订阅名称
 
 ## 访问方式
 
-**主订阅入口**：
+### 主订阅入口
 
 ```text
 https://你的域名/auto
 ```
 
-或使用 query 参数：
+或：
 
 ```text
 https://你的域名/?token=auto
 ```
 
-**访客订阅入口**（如果配置了 `GUEST` 环境变量）：
+如果修改了 TOKEN，请将 auto 替换为自己的 Token。
+
+### 访客订阅入口
+
+配置 GUEST 或 GUESTTOKEN 后可访问：
 
 ```text
 https://你的域名/你的GUEST值
 ```
 
-如果在环境变量里修改了 `TOKEN`，就把上面的 `auto` 换成自己的 Token。
+### 管理后台
 
-## 页面使用
+绑定 KV 后访问：
 
-**管理页面**（需要绑定 KV）：访问自己的 Token 地址，例如 https://你的域名/auto。如果配置了 ADMIN_USER 和 ADMIN_PASS，将先显示登录页面，登录成功后进入订阅管理后台，可在线编辑订阅内容、查看各种订阅格式链接以及访客订阅链接。
+```text
+https://你的域名/你的TOKEN
+```
 
-**访客页面**（如配置了 GUEST）：访客可以访问访客订阅链接，查看可用的订阅格式（自适应、Base64、Clash、Sing-box、Surge、Loon），并复制或生成二维码。
+如果配置：
+
+```text
+ADMIN_USER
+ADMIN_PASS
+```
+
+将先进入登录页面。
+
+登录成功后可：
+
+- 编辑订阅内容
+- 保存至 Cloudflare KV
+- 查看各种订阅格式链接
+- 查看访客订阅链接
+- 管理聚合内容
 
 ## 环境变量
 
-| 变量名 | 必填 | 说明 |
-| --- | --- | --- |
-| `TOKEN` | 推荐 | 主订阅入口 Token，默认是 `auto` |
-| `GUESTTOKEN` 或 `GUEST` | 可选 | 访客订阅 Token（用于访客模式的路径和链接） |
-| `ADMIN_USER` | 可选 | 管理后台用户名（需同时设置 ADMIN_PASS） |
-| `ADMIN_PASS` | 可选 | 管理后台密码（需同时设置 ADMIN_USER） |
-| `LINK` | 可选 | 未绑定 KV 时使用的节点或订阅内容 |
-| `LINKSUB` | 可选 | 额外订阅链接 |
-| `SUBNAME` | 可选 | 页面标题和订阅名称 |
-| `SUBAPI` | 可选 | 订阅转换后端 |
-| `SUBCONFIG` | 可选 | 订阅转换配置文件 |
-| `SUBUPTIME` | 可选 | 订阅更新时间，单位小时 |
-| `TGTOKEN` | 可选 | Telegram Bot Token |
-| `TGID` | 可选 | Telegram 接收通知的 ID |
-| `TG` | 可选 | 设置为 `1` 时启用更多访问通知 |
-| `URL302` | 可选 | 非法访问时 302 跳转地址 |
-| `URL` | 可选 | 非法访问时反代目标 |
-| `WARP` | 可选 | 额外追加的 WARP 节点内容 |
+| 变量名 | 说明 |
+| --- | --- |
+| TOKEN | 主订阅 Token |
+| GUESTTOKEN / GUEST | 访客订阅 Token |
+| ADMIN_USER | 管理后台用户名 |
+| ADMIN_PASS | 管理后台密码 |
+| LINK | 节点或订阅内容 |
+| LINKSUB | 额外订阅链接 |
+| SUBNAME | 页面标题 |
+| SUBAPI | 订阅转换后端 |
+| SUBCONFIG | 订阅转换配置 |
+| SUBUPTIME | 订阅更新时间 |
+| TGTOKEN | Telegram Bot Token |
+| TGID | Telegram 用户 ID |
+| TG | 访问通知开关 |
+| URL302 | 非法访问跳转地址 |
+| URL | 非法访问反代目标 |
+| WARP | 追加 WARP 节点 |
 
-## KV 绑定
+## KV 配置
 
-如果要使用网页编辑功能，需要在 Cloudflare 里绑定 KV 命名空间：
+启用在线编辑功能需要绑定 KV：
 
 ```toml
 [[kv_namespaces]]
 binding = "KV"
-id = "你的 KV namespace id"
+id = "你的KV命名空间ID"
 ```
 
-`binding` 必须是 `KV`。
+注意：binding 名称必须为 KV。
 
-## 部署
+## 部署方式
 
-使用 Wrangler 部署：
+### Cloudflare Dashboard
+
+直接将 `_worker.js` 内容复制到 Cloudflare Workers 后保存部署。
+
+### Wrangler
 
 ```bash
 wrangler deploy
 ```
 
-也可以把 `_worker.js` 内容复制到 Cloudflare Worker 在线编辑器里部署。
+## 与原版的主要区别
 
-## 说明
+- 调整前端视觉风格
+- Apple 液态玻璃设计
+- 手机端优先布局
+- 默认隐藏部分无关展示内容
+- 增加访客订阅页面
+- 增加后台登录验证
+- 增加 Cookie 登录保持
+- 优化订阅管理体验
 
-CF-SUB-LEAN 是基于 CF-Workers-SUB 的个人维护版本，主要目标是自用、干净、好操作。在保留原项目核心功能的基础上，对前端界面进行了重新设计，加入 Apple 风格液态玻璃 UI、访客订阅页面、后台登录验证以及移动端优化，更适合作为个人订阅聚合与管理面板使用。
+## 免责声明
+
+本项目仅供学习与技术研究使用。
+
+请遵守当地法律法规及相关服务条款。
+
+因使用本项目造成的任何后果由使用者自行承担。
+
+## 致谢
+
+感谢 CF-Workers-SUB 项目及其贡献者。
+
+如果你喜欢本项目，也请为原项目点一个 Star。

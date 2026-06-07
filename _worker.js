@@ -27,6 +27,7 @@ export default {
 		const userAgent = userAgentHeader ? userAgentHeader.toLowerCase() : "null";
 		const url = new URL(request.url);
 		const token = url.searchParams.get('token');
+		const guestPath = url.pathname.toLowerCase() === '/guest';
 		mytoken = env.TOKEN || mytoken;
 		BotToken = env.TGTOKEN || BotToken;
 		ChatID = env.TGID || ChatID;
@@ -48,6 +49,7 @@ export default {
 		guestToken = env.GUESTTOKEN || env.GUEST || guestToken;
 		if (!guestToken) guestToken = await MD5MD5(mytoken);
 		const 访客订阅 = guestToken;
+		const guestOnlyPage = guestPath && userAgent.includes('mozilla') && !url.search;
 		//console.log(`${fakeUserID}\n${fakeHostName}`); // 打印fakeID
 
 		let UD = Math.floor(((timestamp - Date.now()) / timestamp * total * 1099511627776) / 2);
@@ -55,7 +57,8 @@ export default {
 		let expire = Math.floor(timestamp / 1000);
 		SUBUpdateTime = env.SUBUPTIME || SUBUpdateTime;
 
-		if (!([mytoken, fakeToken, 访客订阅].includes(token) || url.pathname == ("/" + mytoken) || url.pathname.includes("/" + mytoken + "?"))) {
+		const allowedPath = [mytoken, fakeToken, 访客订阅].includes(token) || url.pathname === "/" + mytoken || url.pathname === "/" + 访客订阅 || guestPath;
+		if (!allowedPath) {
 			if (TG == 1 && url.pathname !== "/" && url.pathname !== "/favicon.ico") await sendMessage(`#异常访问 ${FileName}`, request.headers.get('CF-Connecting-IP'), `域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 			if (env.URL302) return Response.redirect(env.URL302, 302);
 			else if (env.URL) return await proxyURL(env.URL, url);
@@ -66,9 +69,14 @@ export default {
 				},
 			});
 		} else {
+			if (guestOnlyPage) {
+				return new Response(renderGuestPage(url, 访客订阅, subProtocol, subConverter, subConfig), {
+					headers: { 'Content-Type': 'text/html;charset=utf-8' }
+				});
+			}
 			if (env.KV) {
 				await 迁移地址列表(env, 'LINK.txt');
-				if (userAgent.includes('mozilla') && !url.search) {
+				if (userAgent.includes('mozilla') && !url.search && !guestPath) {
 					await sendMessage(`#编辑订阅 ${FileName}`, request.headers.get('CF-Connecting-IP'), `域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 					return await KV(request, env, 'LINK.txt', 访客订阅);
 				} else {
@@ -281,6 +289,110 @@ async function sendMessage(type, ip, add_data = "") {
 	}
 }
 
+function renderGuestPage(url, guest, subProtocol, subConverter, subConfig) {
+	return `<!DOCTYPE html>
+	<html>
+	<head>
+		<title>访客订阅 - ${FileName}</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<style>
+			:root { color-scheme: light; --text: #172033; --muted: rgba(23, 32, 51, 0.64); --line: rgba(255, 255, 255, 0.56); --shadow: 0 24px 70px rgba(51, 71, 110, 0.22); --accent: #147efb; }
+			body { margin: 0; padding: 24px; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif; background: linear-gradient(135deg, #f5fbff 0%, #eef4f9 48%, #f7f2ed 100%); }
+			.shell { max-width: 980px; margin: 0 auto; }
+			.glass { border: 1px solid var(--line); border-radius: 22px; background: rgba(255, 255, 255, 0.70); backdrop-filter: blur(28px) saturate(180%); -webkit-backdrop-filter: blur(28px) saturate(180%); box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.72); padding: 20px; }
+			.header { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; margin-bottom: 20px; }
+			.link-list { display: grid; gap: 14px; margin-top: 20px; }
+			.link-row { display: grid; grid-template-columns: 100px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px; border-radius: 16px; background: rgba(255,255,255,0.72); border: 1px solid rgba(255,255,255,0.72); }
+			.link-name { font-weight: 700; color: rgba(23, 32, 51, 0.78); }
+			.link-url { color: var(--accent); text-decoration: none; overflow-wrap: anywhere; word-break: break-all; white-space: normal; }
+			.action-btn { min-height: 36px; border: 1px solid rgba(255,255,255,0.72); border-radius: 999px; background: rgba(255,255,255,0.58); color: var(--text); cursor: pointer; }
+			.action-btn:hover { background: rgba(255,255,255,0.82); }
+			.guest-token { display: block; margin-top: 6px; overflow-wrap: anywhere; }
+			.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(18px); padding: 10px 14px; border: 1px solid var(--line); border-radius: 999px; background: rgba(28, 32, 41, 0.72); color: white; backdrop-filter: blur(22px) saturate(160%); opacity: 0; pointer-events: none; transition: opacity 180ms ease, transform 180ms ease; }
+			.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+		</style>
+		<script src="https://cdn.jsdelivr.net/npm/@keeex/qrcodejs-kx@1.0.2/qrcode.min.js"></script>
+	</head>
+	<body>
+		<div class="shell">
+			<div class="header">
+				<div>
+					<h1>${FileName} 访客订阅</h1>
+					<p>访问 /GUEST 直接进入访客订阅模式。</p>
+				</div>
+				<div class="status-pill"><span class="dot"></span> Visitor mode</div>
+			</div>
+			<div class="glass">
+				<h2>访客订阅链接</h2>
+				<p class="guest-token">Token: ${guest}</p>
+				<div class="link-list">
+					<div class="link-row">
+						<span class="link-name">自适应</span>
+						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST','guest_0')">https://${url.hostname}/GUEST</a>
+						<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST','guest_0')">复制</button>
+					</div>
+					<div id="guest_0" class="qrcode"></div>
+					<div class="link-row">
+						<span class="link-name">Base64</span>
+						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST?b64','guest_1')">https://${url.hostname}/GUEST?b64</a>
+						<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST?b64','guest_1')">复制</button>
+					</div>
+					<div id="guest_1" class="qrcode"></div>
+					<div class="link-row">
+						<span class="link-name">Clash</span>
+						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST?clash','guest_2')">https://${url.hostname}/GUEST?clash</a>
+						<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST?clash','guest_2')">复制</button>
+					</div>
+					<div id="guest_2" class="qrcode"></div>
+					<div class="link-row">
+						<span class="link-name">Sing-box</span>
+						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST?sb','guest_3')">https://${url.hostname}/GUEST?sb</a>
+						<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST?sb','guest_3')">复制</button>
+					</div>
+					<div id="guest_3" class="qrcode"></div>
+					<div class="link-row">
+						<span class="link-name">Surge</span>
+						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST?surge','guest_4')">https://${url.hostname}/GUEST?surge</a>
+						<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST?surge','guest_4')">复制</button>
+					</div>
+					<div id="guest_4" class="qrcode"></div>
+					<div class="link-row">
+						<span class="link-name">Loon</span>
+						<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST?loon','guest_5')">https://${url.hostname}/GUEST?loon</a>
+						<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST?loon','guest_5')">复制</button>
+					</div>
+					<div id="guest_5" class="qrcode"></div>
+				</div>
+			</div>
+		</div>
+		<div id="toast" class="toast"></div>
+		<script>
+		function showToast(message) {
+			const toast = document.getElementById('toast');
+			if (!toast) return;
+			toast.textContent = message;
+			toast.classList.add('show');
+			clearTimeout(window.__toastTimer);
+			window.__toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+		}
+		function copyToClipboard(text, qrcode) {
+			navigator.clipboard.writeText(text)
+				.then(() => showToast('已复制，并生成二维码'))
+				.catch(err => {
+					console.error('复制失败:', err);
+					showToast('复制失败，请手动复制');
+				});
+			const qrcodeDiv = document.getElementById(qrcode);
+			if (!qrcodeDiv) return;
+			qrcodeDiv.innerHTML = '';
+			new QRCode(qrcodeDiv, { text: text, width: 220, height: 220, colorDark: "#111827", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.Q, scale: 1 });
+			qrcodeDiv.style.display = 'block';
+		}
+		</script>
+	</body>
+	</html>`;
+}
 function base64Decode(str) {
 	const bytes = new Uint8Array(atob(str).split('').map(c => c.charCodeAt(0)));
 	const decoder = new TextDecoder('utf-8');
@@ -672,8 +784,8 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 								color: rgba(23, 32, 51, 0.78);
 							}
 							.link-url {
-								overflow: hidden;
-								text-overflow: ellipsis;
+								overflow-wrap: anywhere;
+								word-break: break-all;
 								white-space: nowrap;
 								color: var(--accent);
 								text-decoration: none;
@@ -908,38 +1020,38 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 										<div id="noticeContent" class="notice-content">
 											<div class="link-row">
 												<span class="link-name">自适应</span>
-												<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}','guest_0')">https://${url.hostname}/sub?token=${guest}</a>
-												<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}','guest_0')">复制</button>
+												<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST','guest_0')">https://${url.hostname}/GUEST</a>
+												<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST','guest_0')">复制</button>
 											</div>
 											<div id="guest_0" class="qrcode"></div>
 											<div class="link-row">
 												<span class="link-name">Base64</span>
-												<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&b64','guest_1')">https://${url.hostname}/sub?token=${guest}&b64</a>
-												<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&b64','guest_1')">复制</button>
+												<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST&b64','guest_1')">https://${url.hostname}/GUEST&b64</a>
+												<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST&b64','guest_1')">复制</button>
 											</div>
 											<div id="guest_1" class="qrcode"></div>
 											<div class="link-row">
 												<span class="link-name">Clash</span>
-												<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&clash','guest_2')">https://${url.hostname}/sub?token=${guest}&clash</a>
-												<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&clash','guest_2')">复制</button>
+												<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST&clash','guest_2')">https://${url.hostname}/GUEST&clash</a>
+												<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST&clash','guest_2')">复制</button>
 											</div>
 											<div id="guest_2" class="qrcode"></div>
 											<div class="link-row">
 												<span class="link-name">Sing-box</span>
-												<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&sb','guest_3')">https://${url.hostname}/sub?token=${guest}&sb</a>
-												<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&sb','guest_3')">复制</button>
+												<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST&sb','guest_3')">https://${url.hostname}/GUEST&sb</a>
+												<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST&sb','guest_3')">复制</button>
 											</div>
 											<div id="guest_3" class="qrcode"></div>
 											<div class="link-row">
 												<span class="link-name">Surge</span>
-												<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&surge','guest_4')">https://${url.hostname}/sub?token=${guest}&surge</a>
-												<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&surge','guest_4')">复制</button>
+												<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST&surge','guest_4')">https://${url.hostname}/GUEST&surge</a>
+												<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST&surge','guest_4')">复制</button>
 											</div>
 											<div id="guest_4" class="qrcode"></div>
 											<div class="link-row">
 												<span class="link-name">Loon</span>
-												<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&loon','guest_5')">https://${url.hostname}/sub?token=${guest}&loon</a>
-												<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&loon','guest_5')">复制</button>
+												<a class="link-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/GUEST&loon','guest_5')">https://${url.hostname}/GUEST&loon</a>
+												<button class="action-btn" onclick="copyToClipboard('https://${url.hostname}/GUEST&loon','guest_5')">复制</button>
 											</div>
 											<div id="guest_5" class="qrcode"></div>
 										</div>

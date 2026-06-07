@@ -57,7 +57,7 @@ https://你的域名/auto
 | 变量名 | 必填 | 说明 |
 | --- | --- | --- |
 | `TOKEN` | 推荐 | 主订阅入口 Token，默认是 `auto` |
-| `GUEST` / `GUESTTOKEN` | 可选 | 访客订阅 Token |
+| `GUEST` | 可选 | 访客订阅 Token |
 | `LINK` | 可选 | 未绑定 KV 时使用的节点或订阅内容 |
 | `LINKSUB` | 可选 | 额外订阅链接 |
 | `SUBNAME` | 可选 | 页面标题和订阅名称 |

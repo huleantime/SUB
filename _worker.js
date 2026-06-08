@@ -1,4 +1,3 @@
-
 // 部署完成后在网址后面加上这个，获取自建节点和机场聚合节点，/?token=auto或/auto或
 
 let mytoken = 'auto';
@@ -41,7 +40,6 @@ export default {
 		}
 		subConfig = env.SUBCONFIG || subConfig;
 		FileName = env.SUBNAME || FileName;
-
 		const currentDate = new Date();
 		currentDate.setHours(0, 0, 0, 0);
 		const timeTemp = Math.ceil(currentDate.getTime() / 1000);
@@ -50,14 +48,15 @@ export default {
 		if (!guestToken) guestToken = await MD5MD5(mytoken);
 		const 访客订阅 = guestToken;
 		const guestPath = normalizedPath === ('/' + (String(访客订阅 || '').toLowerCase()));
-		const guestOnlyPage = guestPath && !url.search;
+		
+		// 仿照管理员的逻辑：只有当是浏览器访问(mozilla)且不带参数时，才进入访客的前端展示页面
+		const guestOnlyPage = guestPath && !url.search && userAgent.includes('mozilla');
+		
 		//console.log(`${fakeUserID}\n${fakeHostName}`); // 打印fakeID
-
 		let UD = Math.floor(((timestamp - Date.now()) / timestamp * total * 1099511627776) / 2);
 		total = total * 1099511627776;
 		let expire = Math.floor(timestamp / 1000);
 		SUBUpdateTime = env.SUBUPTIME || SUBUpdateTime;
-
 		const allowedPath = [mytoken, fakeToken, 访客订阅].includes(token) || normalizedPath === "/" + mytoken || normalizedPath === "/" + 访客订阅 || guestPath;
 		if (!allowedPath) {
 			if (TG == 1 && url.pathname !== "/" && url.pathname !== "/favicon.ico") await sendMessage(`#异常访问 ${FileName}`, request.headers.get('CF-Connecting-IP'), `域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
@@ -81,16 +80,13 @@ export default {
 					// 身份验证检查
 					const adminUser = env.ADMIN_USER || '';
 					const adminPass = env.ADMIN_PASS || '';
-
 					if (adminUser && adminPass) {
 						const cookieHeader = request.headers.get('Cookie') || '';
 						const hasSession = cookieHeader.includes('cf_sub_admin=1');
-
 						if (request.method === 'POST' && !hasSession) {
 							const formData = await request.formData();
 							const inputUser = formData.get('admin_user') || '';
 							const inputPass = formData.get('admin_pass') || '';
-
 							if (inputUser === adminUser && inputPass === adminPass) {
 								return new Response(null, {
 									status: 302,
@@ -100,19 +96,16 @@ export default {
 									}
 								});
 							}
-
 							return new Response(renderLoginPage(url, true), {
 								headers: { 'Content-Type': 'text/html;charset=utf-8' }
 							});
 						}
-
 						if (!hasSession) {
 							return new Response(renderLoginPage(url, false), {
 								headers: { 'Content-Type': 'text/html;charset=utf-8' }
 							});
 						}
 					}
-
 					await sendMessage(`#编辑订阅 ${FileName}`, request.headers.get('CF-Connecting-IP'), `域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 					return await KV(request, env, 'LINK.txt', 访客订阅);
 				} else {
@@ -150,12 +143,10 @@ export default {
 					订阅格式 = 'clash';
 				}
 			}
-
 			let subConverterUrl;
 			let 订阅转换URL = `${url.origin}/${await MD5MD5(fakeToken)}?token=${fakeToken}`;
 			//console.log(订阅转换URL);
 			let req_data = MainData;
-
 			let 追加UA = 'v2rayn';
 			if (url.searchParams.has('b64') || url.searchParams.has('base64')) 订阅格式 = 'base64';
 			else if (url.searchParams.has('clash')) 追加UA = 'clash';
@@ -163,7 +154,6 @@ export default {
 			else if (url.searchParams.has('surge')) 追加UA = 'surge';
 			else if (url.searchParams.has('quanx')) 追加UA = 'Quantumult%20X';
 			else if (url.searchParams.has('loon')) 追加UA = 'Loon';
-
 			const 订阅链接数组 = [...new Set(urls)].filter(item => item?.trim?.()); // 去重
 			if (订阅链接数组.length > 0) {
 				const 请求订阅响应内容 = await getSUB(订阅链接数组, request, 追加UA, userAgentHeader);
@@ -183,7 +173,6 @@ export default {
 					}
 				}
 			}
-
 			if (env.WARP) 订阅转换URL += "|" + (await ADD(env.WARP)).join("|");
 			//修复中文错误
 			const utf8Encoder = new TextEncoder();
@@ -191,12 +180,10 @@ export default {
 			//const text = String.fromCharCode.apply(null, encodedData);
 			const utf8Decoder = new TextDecoder();
 			const text = utf8Decoder.decode(encodedData);
-
 			//去重
 			const uniqueLines = new Set(text.split('\n'));
 			const result = [...uniqueLines].join('\n');
 			//console.log(result);
-
 			let base64Data;
 			try {
 				base64Data = btoa(result);
@@ -205,25 +192,20 @@ export default {
 					const binary = new TextEncoder().encode(data);
 					let base64 = '';
 					const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-
 					for (let i = 0; i < binary.length; i += 3) {
 						const byte1 = binary[i];
 						const byte2 = binary[i + 1] || 0;
 						const byte3 = binary[i + 2] || 0;
-
 						base64 += chars[byte1 >> 2];
 						base64 += chars[((byte1 & 3) << 4) | (byte2 >> 4)];
 						base64 += chars[((byte2 & 15) << 2) | (byte3 >> 6)];
 						base64 += chars[byte3 & 63];
 					}
-
 					const padding = 3 - (binary.length % 3 || 3);
 					return base64.slice(0, base64.length - padding) + '=='.slice(0, padding);
 				}
-
 				base64Data = encodeBase64(result)
 			}
-
 			// 构建响应头对象
 			const responseHeaders = {
 				"content-type": "text/plain; charset=utf-8",
@@ -231,7 +213,6 @@ export default {
 				"Profile-web-page-url": request.url.includes('?') ? request.url.split('?')[0] : request.url,
 				//"Subscription-Userinfo": `upload=${UD}; download=${UD}; total=${total}; expire=${expire}`,
 			};
-
 			if (订阅格式 == 'base64' || token == fakeToken) {
 				return new Response(base64Data, { headers: responseHeaders });
 			} else if (订阅格式 == 'clash') {
@@ -312,7 +293,6 @@ async function sendMessage(type, ip, add_data = "") {
 		} else {
 			msg = `${type}\nIP: ${ip}\n<tg-spoiler>${add_data}`;
 		}
-
 		let url = "https://api.telegram.org/bot" + BotToken + "/sendMessage?chat_id=" + ChatID + "&parse_mode=HTML&text=" + encodeURIComponent(msg);
 		return fetch(url, {
 			method: 'get',
@@ -482,15 +462,12 @@ function base64Decode(str) {
 
 async function MD5MD5(text) {
 	const encoder = new TextEncoder();
-
 	const firstPass = await crypto.subtle.digest('MD5', encoder.encode(text));
 	const firstPassArray = Array.from(new Uint8Array(firstPass));
 	const firstHex = firstPassArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
 	const secondPass = await crypto.subtle.digest('MD5', encoder.encode(firstHex.slice(7, 27)));
 	const secondPassArray = Array.from(new Uint8Array(secondPass));
 	const secondHex = secondPassArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
 	return secondHex.toLowerCase();
 }
 
@@ -502,7 +479,6 @@ function clashFix(content) {
 		} else {
 			lines = content.split('\n');
 		}
-
 		let result = "";
 		for (let line of lines) {
 			if (line.includes('type: wireguard')) {
@@ -513,7 +489,6 @@ function clashFix(content) {
 				result += line + '\n';
 			}
 		}
-
 		content = result;
 	}
 	return content;
@@ -522,7 +497,6 @@ function clashFix(content) {
 async function proxyURL(proxyURL, url) {
 	const URLs = await ADD(proxyURL);
 	const fullURL = URLs[Math.floor(Math.random() * URLs.length)];
-
 	// 解析目标 URL
 	let parsedURL = new URL(fullURL);
 	console.log(parsedURL);
@@ -531,31 +505,25 @@ async function proxyURL(proxyURL, url) {
 	let URLHostname = parsedURL.hostname;
 	let URLPathname = parsedURL.pathname;
 	let URLSearch = parsedURL.search;
-
 	// 处理 pathname
 	if (URLPathname.charAt(URLPathname.length - 1) == '/') {
 		URLPathname = URLPathname.slice(0, -1);
 	}
 	URLPathname += url.pathname;
-
 	// 构建新的 URL
 	let newURL = `${URLProtocol}://${URLHostname}${URLPathname}${URLSearch}`;
-
 	// 反向代理请求
 	let response = await fetch(newURL);
-
 	// 创建新的响应
 	let newResponse = new Response(response.body, {
 		status: response.status,
 		statusText: response.statusText,
 		headers: response.headers
 	});
-
 	// 添加自定义头部，包含 URL 信息
 	//newResponse.headers.set('X-Proxied-By', 'Cloudflare Worker');
 	//newResponse.headers.set('X-Original-URL', fullURL);
 	newResponse.headers.set('X-New-URL', newURL);
-
 	return newResponse;
 }
 
@@ -570,11 +538,9 @@ async function getSUB(api, request, 追加UA, userAgentHeader) {
 	const timeout = setTimeout(() => {
 		controller.abort(); // 2秒后取消所有请求
 	}, 2000);
-
 	try {
 		// 使用Promise.allSettled等待所有API请求完成，无论成功或失败
 		const responses = await Promise.allSettled(api.map(apiUrl => getUrl(request, apiUrl, 追加UA, userAgentHeader).then(response => response.ok ? response.text() : Promise.reject(response))));
-
 		// 遍历所有响应
 		const modifiedResponses = responses.map((response, index) => {
 			// 检查是否请求成功
@@ -600,9 +566,7 @@ async function getSUB(api, request, 追加UA, userAgentHeader) {
 				apiUrl: api[index] // 将原始的apiUrl添加到返回对象中
 			};
 		});
-
 		console.log(modifiedResponses); // 输出修改后的响应数组
-
 		for (const response of modifiedResponses) {
 			// 检查响应状态是否为'fulfilled'
 			if (response.status === 'fulfilled') {
@@ -631,7 +595,6 @@ async function getSUB(api, request, 追加UA, userAgentHeader) {
 	} finally {
 		clearTimeout(timeout); // 清除定时器
 	}
-
 	const 订阅内容 = await ADD(newapi + 异常订阅); // 将处理后的内容转换为数组
 	// 返回处理后的结果
 	return [订阅内容, 订阅转换URLs];
@@ -641,7 +604,6 @@ async function getUrl(request, targetUrl, 追加UA, userAgentHeader) {
 	// 设置自定义 User-Agent
 	const newHeaders = new Headers(request.headers);
 	newHeaders.set("User-Agent", `${atob('djJyYXlOLzYuNDU=')} cmliu/CF-Workers-SUB ${追加UA}(${userAgentHeader})`);
-
 	// 构建新的请求对象
 	const modifiedRequest = new Request(targetUrl, {
 		method: request.method,
@@ -657,13 +619,11 @@ async function getUrl(request, targetUrl, 追加UA, userAgentHeader) {
 			validateCertificate: false
 		}
 	});
-
 	// 输出请求的详细信息
 	console.log(`请求URL: ${targetUrl}`);
 	console.log(`请求头: ${JSON.stringify([...newHeaders])}`);
 	console.log(`请求方法: ${request.method}`);
 	console.log(`请求体: ${request.method === "GET" ? null : request.body}`);
-
 	// 发送请求并返回响应
 	return fetch(modifiedRequest);
 }
@@ -678,7 +638,6 @@ function isValidBase64(str) {
 async function 迁移地址列表(env, txt = 'ADD.txt') {
 	const 旧数据 = await env.KV.get(`/${txt}`);
 	const 新数据 = await env.KV.get(txt);
-
 	if (旧数据 && !新数据) {
 		// 写入新位置
 		await env.KV.put(txt, 旧数据);
@@ -704,11 +663,9 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 				return new Response("保存失败: " + error.message, { status: 500 });
 			}
 		}
-
 		// GET请求部分
 		let content = '';
 		let hasKV = !!env.KV;
-
 		if (hasKV) {
 			try {
 				content = await env.KV.get(txt) || '';
@@ -717,7 +674,6 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 				content = '读取数据时发生错误: ' + error.message;
 			}
 		}
-
 		const html = `
 			<!DOCTYPE html>
 			<html>
@@ -1166,7 +1122,7 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 									<div class="editor-container">
 										${hasKV ? `
 										<textarea class="editor"
-											placeholder="${decodeURIComponent(atob('TElOSyVFNyVBNCVCQSVFNCVCRSU4QiVFRiVCQyU4OCVFNCVCOCU4MCVFOCVBMSU4QyVFNCVCOCU4MCVFNCVCOCVBQSVFOCU4QSU4MiVFNyU4MiVCOSVFOSU5MyVCRSVFNiU4RSVBNSVFNSU4RCVCMyVFNSU4RiVBRiVFRiVCQyU4OSVFRiVCQyU5QQp2bGVzcyUzQSUyRiUyRjI0NmFhNzk1LTA2MzctNGY0Yy04ZjY0LTJjOGZiMjRjMWJhZCU0MDEyNy4wLjAuMSUzQTEyMzQlM0ZlbmNyeXB0aW9uJTNEbm9uZSUyNnNlY3VyaXR5JTNEdGxzJTI2c25pJTNEVEcuQ01MaXVzc3NzLmxvc2V5b3VyaXAuY29tJTI2YWxsb3dJbnNlY3VyZSUzRDElMjZ0eXBlJTNEd3MlMjZob3N0JTNEVEcuQ01MaXVzc3NzLmxvc2V5b3VyaXAuY29tJTI2cGF0aCUzRCUyNTJGJTI1M0ZlZCUyNTNEMjU2MCUyM0NGbmF0CnRyb2phbiUzQSUyRiUyRmFhNmRkZDJmLWQxY2YtNGE1Mi1iYTFiLTI2NDBjNDFhNzg1NiU0MDIxOC4xOTAuMjMwLjIwNyUzQTQxMjg4JTNGc2VjdXJpdHklM0R0bHMlMjZzbmklM0RoazEyLmJpbGliaWxpLmNvbSUyNmFsbG93SW5zZWN1cmUlM0QxJTI2dHlwZSUzRHRjcCUyNmhlYWRlclR5cGUlM0Rub25lJTIzSEsKc3MlM0ElMkYlMkZZMmhoWTJoaE1qQXRhV1YwWmkxd2IyeDVNVE13TlRveVJYUlFjVzQyU0ZscVZVNWpTRzlvVEdaVmNFWlJkMjVtYWtORFVUVnRhREZ0U21SRlRVTkNkV04xVjFvNVVERjFaR3RTUzBodVZuaDFielUxYXpGTFdIb3lSbTgyYW5KbmRERTRWelkyYjNCMGVURmxOR0p0TVdwNlprTm1RbUklMjUzRCU0MDg0LjE5LjMxLjYzJTNBNTA4NDElMjNERQoKCiVFOCVBRSVBMiVFOSU5OCU4NSVFOSU5MyVCRSVFNiU4RSVBNSVFNyVBNCVCQSVFNCVCRSU4QiVFRiVCQyU4OCVFNCVCOCU4MCVFOCVBMSU4QyVFNCVCOCU4MCVFNiU5RCVBMSVFOCVBRSVBMiVFOSU5OCU4NSVFOSU5MyVCRSVFNiU4RSVBNSVFNSU4RCVCMyVFNSU4RiVBRiVFRiVCQyU4OSVFRiVCQyU5QQpodHRwcyUzQSUyRiUyRnN1Yi54Zi5mcmVlLmhyJTJGYXV0bw=='))}"
+											placeholder="${decodeURIComponent(atob('TElOSyVFNyVBNCVCQSVFNCVCRSU4QiVFRiVCQyU4OCVFNCVCOCU4MCVFOCVBMSU4QyVFNCVCOCU4MCVFNiU5RCVBMSVFOCVBRSVBMiVFOSU5OCU4NSVFOSU5MyVCRSVFNiU4RSVBNSVFNyVBNCVCQSVFNCVCRSU4QiVFRiVCQyU4OCVFNCVCOCU4MCVFOCVBMSU4QyVFNCVCOCU4MCVFNiU5RCVBMSVFOCVBRSVBMiVFOSU5OCU4NSVFOSU5MyVCRSVFNiU4RSVBNSVFNSU4RCVCMyVFNSU4RiVBRiVFRiVCQyU4OSVFRiVCQyU5QQp2bGVzcyUzQSUyRiUyRjI0NmFhNzk1LTA2MzctNGY0Yy04ZjY0LTJjOGZiMjRjMWJhZCU0MDEyNy4wLjAuMSUzQTEyMzQlM0ZlbmNyeXB0aW9uJTNEbm9uZSUyNnNlY3VyaXR5JTNEdGxzJTI2c25pJTNEVEcuQ01MaXVzc3NzLmxvc2V5b3VyaXAuY29tJTI2YWxsb3dJbnNlY3VyZSUzRDElMjZ0eXBlJTNEd3MlMjZob3N0JTNEVEcuQ01MaXVzc3NzLmxvc2V5b3VyaXAuY29tJTI2YWxSlowbI0RlZCUyNTNEMjU2MCUyM0NGbmF0CnRyb2phbiUzQSUyRiUyRmFhNmRkZDJmLWQxY2YtNGE1Mi1iYTFiLTI2NDBjNDFhNzg1NiU0MDIxOC4xOTAuMjMwLjIwNyUzQTQxMjg4JTNGc2VjdXJpdHklM0R0bHMlMjZzbmklM0RoazEyLmJpbGliaWxpLmNvbSUyNmFsbG93SW5zZWN1cmUlM0QxJTI2dHlwZSUzRHRjcCUyNmhlYWRlclR5cGUlM0Rub25lJTIzSEsKc3MlM0ElMkYlMkZZMmhoWTJoaE1qQXRhV1YwWmkxd2IyeDVNVE13TlRveVJYUlFjVzQyU0ZscVZVNWpTRzlvVEdaVmNFWlJkMjVtYWtORFVUVnRhREZ0U21SRlRVTkNkV04xVjFvNVVERjFaR3RTUzBodVZuaDFielUxYXpGTFdIb3lSbTgyYW5KbmRERTRWelkyYjNCMGVURmxOR0p0TVdwNlprTm1RbUklMjUzRCU0MDg0LjE5LjMxLjYzJTNBNTA4NDElMjNERQoKCiVFOCVBRSVBMiVFOSU5OCU4NSVFOSU5MyVCRSVFNiU4RSVBNSVFNyVBNCVCQSVFNCVCRSU4QiVFRiVCQyU4OCVFNCVCOCU4MCVFOCVBMSU4QyVFNCVCOCU4MCVFNiU5RCVBMSVFOCVBRSVBMiVFOSU5OCU4NSVFOSU5MyVCRSVFNiU4RSVBNSVFNSU4RCVCMyVFNSU4RiVBRiVFRiVCQyU4OSVFRiVCQyU5QQpodHRwcyUzQSUyRiUyRnN1Yi54Zi5mcmVlLmhyJTJGYXV0bw=='))}"
 											id="content">${content}</textarea>
 										<div class="save-container">
 											<button class="save-btn" onclick="saveContent(this)">保存</button>
@@ -1187,7 +1143,6 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 							clearTimeout(window.__toastTimer);
 							window.__toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
 						}
-
 						function copyToClipboard(text, qrcode) {
 							navigator.clipboard.writeText(text)
 								.then(() => showToast('已复制，并生成二维码'))
@@ -1195,7 +1150,6 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 									console.error('复制失败:', err);
 									showToast('复制失败，请手动复制');
 								});
-
 							const qrcodeDiv = document.getElementById(qrcode);
 							if (!qrcodeDiv) return;
 							qrcodeDiv.innerHTML = '';
@@ -1210,54 +1164,44 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 							});
 							qrcodeDiv.style.display = 'block';
 						}
-
 						const textarea = document.getElementById('content');
 						const saveButton = document.querySelector('.save-btn');
 						const statusElem = document.getElementById('saveStatus');
 						let saveTimer;
-
 						function updateStatus(message, isError = false) {
 							if (!statusElem) return;
 							statusElem.textContent = message;
 							statusElem.style.color = isError ? 'var(--danger)' : 'var(--muted)';
 						}
-
 						function replaceFullwidthColon() {
 							if (!textarea) return;
 							textarea.value = textarea.value.replace(/：/g, ':');
 						}
-
 						function setSavingState(button, message) {
 							const target = button || saveButton;
 							if (!target) return;
 							target.disabled = true;
 							target.textContent = message;
 						}
-
 						function resetSavingState(button) {
 							const target = button || saveButton;
 							if (!target) return;
 							target.disabled = false;
 							target.textContent = '保存';
 						}
-
 						async function saveContent(button) {
 							try {
 								if (!textarea) {
 									throw new Error('找不到文本编辑区域');
 								}
-
 								const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 								if (!isIOS) replaceFullwidthColon();
-
 								const newContent = textarea.value || '';
 								const originalContent = textarea.defaultValue || '';
-
 								if (newContent === originalContent) {
 									updateStatus('内容未变化');
 									return;
 								}
-
 								setSavingState(button, '保存中');
 								const response = await fetch(window.location.href, {
 									method: 'POST',
@@ -1267,11 +1211,9 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 									},
 									cache: 'no-cache'
 								});
-
 								if (!response.ok) {
 									throw new Error('HTTP error! status: ' + response.status);
 								}
-
 								textarea.defaultValue = newContent;
 								const now = new Date().toLocaleString();
 								document.title = '编辑已保存 ' + now;
@@ -1285,7 +1227,6 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 								resetSavingState(button);
 							}
 						}
-
 						if (textarea) {
 							textarea.addEventListener('blur', () => saveContent());
 							textarea.addEventListener('input', () => {
@@ -1293,7 +1234,6 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 								saveTimer = setTimeout(() => saveContent(), 5000);
 							});
 						}
-
 						function toggleNotice() {
 							const noticeContent = document.getElementById('noticeContent');
 							const noticeToggle = document.getElementById('noticeToggle');
@@ -1305,7 +1245,6 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 				</body>
 			</html>
 		`;
-
 		return new Response(html, {
 			headers: { "Content-Type": "text/html;charset=utf-8" }
 		});

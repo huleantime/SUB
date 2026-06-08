@@ -118,12 +118,22 @@ export default {
 						}
 					}
 					
-					// 验证通过，先读取 KV 内容再渲染管理界面
 					await sendMessage(`#编辑订阅 ${FileName}`, request.headers.get('CF-Connecting-IP'), `域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
-					MainData = await env.KV.get('LINK.txt') || MainData;
-					return await KV(request, env, 'LINK.txt', 访客订阅, MainData);
+					
+					// 读取 KV 内容
+					let currentContent = await env.KV.get('LINK.txt') || MainData;
+					// 🚀 核心修复：检测到历史遗留的登录脏数据，自动强制清空，不展示给用户
+					if (currentContent.includes('admin_user=') && currentContent.includes('admin_login=')) {
+						currentContent = ''; 
+					}
+					
+					return await KV(request, env, 'LINK.txt', 访客订阅, currentContent);
 				} else {
 					MainData = await env.KV.get('LINK.txt') || MainData;
+					// 🚀 同步清理后台获取订阅时的脏数据
+					if (MainData.includes('admin_user=') && MainData.includes('admin_login=')) {
+						MainData = ''; 
+					}
 				}
 			} else {
 				MainData = env.LINK || MainData;
@@ -615,13 +625,12 @@ async function 迁移地址列表(env, txt = 'ADD.txt') {
 	return false;
 }
 
-// 核心修复点：将当前读取到的内容作为参数传入，且只接受 text/plain 的保存操作
 async function KV(request, env, txt = 'ADD.txt', guest, currentContent = '') {
 	const url = new URL(request.url);
 	try {
-		// POST请求处理（仅处理前端纯文本编辑器的保存，严格阻断登录表单提交串联）
 		if (request.method === "POST") {
 			const contentType = request.headers.get('content-type') || '';
+			// 只有识别为纯文本（text/plain）时才允许写入，彻底封死表单写入的后门
 			if (contentType.includes('text/plain')) {
 				if (!env.KV) return new Response("未绑定KV空间", { status: 400 });
 				try {
